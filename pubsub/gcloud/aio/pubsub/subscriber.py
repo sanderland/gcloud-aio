@@ -32,6 +32,7 @@ else:
     class AckDeadlineCache:
         def __init__(self, subscriber_client: SubscriberClient,
                      subscription: str, cache_timeout: float):
+            log.warning('initializing AckDeadlineCache')
             self.subscriber_client = subscriber_client
             self.subscription = subscription
             self.cache_timeout = cache_timeout
@@ -44,6 +45,7 @@ else:
             return self.ack_deadline
 
         async def refresh(self) -> None:
+            log.warning('refreshing...')
             try:
                 sub = await self.subscriber_client.get_subscription(
                     self.subscription)
@@ -54,10 +56,14 @@ else:
             self.last_refresh = time.perf_counter()
 
         def cache_outdated(self) -> bool:
+            log.warning('checking if cache is outdated...')
             if (time.perf_counter() - self.last_refresh > self.cache_timeout
                     or self.ack_deadline == float('inf')):
-                return True
-            return False
+                res = True
+            else:
+                res = False
+            log.warning('outdated: %s', res)
+            return res
 
     async def _budgeted_queue_get(queue: 'asyncio.Queue[T]',
                                   time_budget: float) -> List[T]:
@@ -344,6 +350,7 @@ else:
                         nack_window: float = 0.3,
                         metrics_client: Optional[MetricsAgent] = None
                         ) -> None:
+        log.warning('starting subscribe')
         ack_queue: 'asyncio.Queue[str]' = asyncio.Queue(
             maxsize=(max_messages_per_producer * num_producers))
         nack_queue: 'Optional[asyncio.Queue[str]]' = None
